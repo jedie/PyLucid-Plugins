@@ -1,14 +1,21 @@
-<fieldset><legend>FH-D - 3dsmax - Kursanmeldung - SS 2009</legend>
+<fieldset><legend>existierende Kurse</legend>
 <table>
+  <tr>
+    <th>Name</th>
+    <th>aktiv?</th>
+    <th>erstellt</th>
+  </tr>
+{% for item in kurse %}
 <tr>
-    <td>Raum:</td>
-    <td>Raum N 1.60 (CAD - Arbeitsraum)</td>
+    <td>{{ item.name }}</td>
+    <td><a href="{{ toggle }}{{ item.pk }}/" title="aktivieren/deaktivieren">{{ item.active|yesno }}</a></td>
+    <td>{{ item.createtime }}</td>
 </tr>
-<tr>
-    <td>Zeiten:</td>
-    <td>Montag, Vormittags von 09:00 bis 12:00 oder Nachmittags von 13:00 bis 16:00</td>
-</tr>
+{% endfor %}
 </table>
+</fieldset>
+
+<fieldset><legend>Kurs hinzufügen</legend>
 <form method="post" action="{{ url }}">
 <ul id="input_fields">
     {% for field in form %}

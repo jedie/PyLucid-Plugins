@@ -1,0 +1,24 @@
+<table id="kurs_admin">
+  <tr>
+    <th>Name</th>
+    <th>Kurs Wahl</th>
+    <th>mail sended?</th>
+    <th>verified</th>
+    <th>logging</th>
+  </tr>
+{% for item in items %}
+<tr>
+    <td><a href="mailto:{{ item.email }}">{{ item.nachname }}, {{ item.vorname }}</a></td>
+    <td>
+        <ul>
+            {% for kurs in item.kurs_wahl.all %}
+            <li>{{ kurs.name }}</li>
+            {% endfor %}
+        </ul>
+    </td>
+    <td>{{ item.mail_sended }}</td>
+    <td>{{ item.verified }}</td>
+    <td><pre>{{ item.logging }}</pre></td>
+</tr>
+{% endfor %}
+</table>

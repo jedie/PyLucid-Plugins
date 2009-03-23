@@ -1,31 +1,31 @@
 #input_fields, .errorlist {
     list-style-type:none;
+    padding: 0.2em;
+    margin: 0.2em;
+}
+#input_fields li {
+    padding: 0.5em 0.2em 0.5em 0.2em;
+    margin: 0.2em;
+}
+#input_fields li li {
+    /* e.g. a CheckboxSelectMultiple widget */
+    list-style-type:none;
     padding: 0px;
     margin: 0px;
-}
-#input_fields label {
-    font-size: 0.8em;
 }
 #input_fields .field_help_text {
     font-size:0.7em;
     display: block;
-    padding-left: 11em;
+    color: #777;
 }
 #input_fields label {
-    float: left;
-    padding-right: 4px;
-    text-align: right;
-    width: 9em;
+    color: #333;
+    display:block;
 }
-#input_fields input, #input_fields select {
-    width: 35%;
-}
-#input_fields .bigger {
-    /* make some text input fields bigger e.g. keywords,description */
-    width: 75%;
-}
+/* --------------------------------------------------------------
+    forms errors
+*/
 #input_fields .error_field {
-    /* newforms errors */
     border: 1px solid #f00;
     margin: 5px;
 }
@@ -35,4 +35,3 @@
     color: #fff;
     background-color: #f00;
 }
-/* -------------------------------------------------------------------------- */

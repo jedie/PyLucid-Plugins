@@ -1,16 +1,17 @@
-A User has request ({{ request_time }}) a password reset for '{{ base_url }}'.
+Hi...
 
-If this is correct you must go to this Link to set a new pasword:
+Du hast dich für folgenden Kurs angemeldet:
+    {% for kurs in db_entry.kurs_wahl.all %}
+    * {{ kurs.name }}
+    {% endfor %}	
 
-{{ reset_link }}
+Bestätige die richtigkeit deiner EMail Adresse mit diesem Link:
 
-Note: The reset Link expiry {{ expiry_date }}!
+{{ verify_link }}
 
-If this is not correct. Ignore this mail ;)
-
-The password reset request comes from this User:
- * {{ ip }}
-
+Ob du in den Kurs in diesem Semester teilnehmen kannst entscheidet ein
+Losverfahren. Du erhälst eine Mail darüber in den nächsten Tagen.
 
 --
+Reg.from {{ db_entry.ip_address }} - {{ now }}
 This mail was automatic created by PyLucid CMS - http://www.pylucid.org
