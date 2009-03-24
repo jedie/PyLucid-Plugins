@@ -1,24 +1,50 @@
-<table id="kurs_admin">
+<table class="kurs_admin">
   <tr>
+    <th>createtime</th>
     <th>Name</th>
-    <th>Kurs Wahl</th>
-    <th>mail sended?</th>
     <th>verified</th>
+    <th>Semester</th>
+    <th>Matrikel Nr</th>
+    
+    {% for kurs in kurse %}
+    <th>{{ kurs }}</th>
+    {% endfor %}
+    
+    <th>laptop</th>
+    <th>warteliste</th>
+    
+    <th>user note</th>
     <th>logging</th>
   </tr>
-{% for item in items %}
+{% for anmeldung in anmeldungen %}
 <tr>
-    <td><a href="mailto:{{ item.email }}">{{ item.nachname }}, {{ item.vorname }}</a></td>
+    <td>{{ anmeldung.db_instance.createtime|date:"d.m.y H:i" }}</td>
     <td>
-        <ul>
-            {% for kurs in item.kurs_wahl.all %}
-            <li>{{ kurs.name }}</li>
-            {% endfor %}
-        </ul>
-    </td>
-    <td>{{ item.mail_sended }}</td>
-    <td>{{ item.verified }}</td>
-    <td><pre>{{ item.logging }}</pre></td>
+        <a href="mailto:{{ anmeldung.db_instance.email }}">
+        {{ anmeldung.db_instance.nachname }}, {{ anmeldung.db_instance.vorname }}
+        </a>
+    </td>    
+    <td>{{ anmeldung.db_instance.verified|yesno }}</td>
+    
+    <td>{{ anmeldung.db_instance.semester }}</td>
+    <td>{{ anmeldung.db_instance.matrikel_nr }}</td>
+    
+    {% for kurs in anmeldung.kurs_wahl_bools %}
+        <td>{% if kurs %}X{% else %}-{% endif %}</td>
+    {% endfor %}
+    
+    <td>{{ anmeldung.db_instance.laptop|yesno }}</td>
+    <td>{{ anmeldung.db_instance.warteliste }}</td>
+    
+    <td><pre>{{ anmeldung.db_instance.note }}</pre></td>
+    <td><pre>{{ anmeldung.db_instance.logging }}</pre></td>
 </tr>
 {% endfor %}
 </table>
+
+<h2>for OpenOffice</h2>
+<textarea class="kurs_admin">
+Reg.Zeit;Name;Semester;Matrikel Nr;Email;{% for kurs in kurse %}{{ kurs }};{% endfor %}Laptop?;Warteliste;
+{% for anmeldung in anmeldungen %}{{ anmeldung.db_instance.createtime|date:"d.m.y H:i" }};{{ anmeldung.db_instance.nachname }}, {{ anmeldung.db_instance.vorname }};{{ anmeldung.db_instance.semester }};{{ anmeldung.db_instance.matrikel_nr }};{{ anmeldung.db_instance.email }};{% for kurs in anmeldung.kurs_wahl_bools %}{% if kurs %}X{% else %}-{% endif %};{% endfor %}{{ anmeldung.db_instance.laptop|yesno }};{{ anmeldung.db_instance.warteliste }};
+{% endfor %}
+</textarea>

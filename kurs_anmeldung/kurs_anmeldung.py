@@ -67,6 +67,9 @@ class Kurs(models.Model):
 
 
 class KursAnmeldung(models.Model):
+    """
+    TODO: Hinzufügen von "Kursbesucht" oder so...
+    """
     WARTELISTE = (
         ("-", "Habe mich vorher noch nicht für diesen Kurs eingeschrieben."),
         ("SS07",    "SS 2007"),
@@ -77,7 +80,7 @@ class KursAnmeldung(models.Model):
             "unbekannt",
             "Hatte mich schon einmal eingetragen, weiß aber nicht mehr wann."
         ),
-    )
+    )  
 
     email = models.EmailField(
         verbose_name="Email", help_text="Deine gültige EMail Adresse.",
@@ -332,9 +335,31 @@ class kurs_anmeldung(PyLucidBasePlugin):
     #--------------------------------------------------------------------------
 
     def administer(self):
+        kurse = Kurs.objects.all()
+       
         items = KursAnmeldung.objects.all()
+        anmeldungen = []
+        for anmeldung in items:
+            kurs_wahl = anmeldung.kurs_wahl.all()
+            flat_kurs_wahl = sorted([kurs.name for kurs in kurs_wahl])
+            
+            kurs_wahl_bools = []
+            for kurs in kurse:
+                if kurs in kurs_wahl:
+                    kurs_wahl_bools.append(True)
+                else:
+                    kurs_wahl_bools.append(False)
+            
+            anmeldungen.append({
+                "db_instance": anmeldung,
+                "kurs_wahl": kurs_wahl,
+                "flat_kurs_wahl": flat_kurs_wahl,
+                "kurs_wahl_bools": kurs_wahl_bools,
+            })      
+        
         context = {
-            "items": items,
+            "anmeldungen": anmeldungen,
+            "kurse": kurse,
         }
         self._render_template("administer", context)
 
