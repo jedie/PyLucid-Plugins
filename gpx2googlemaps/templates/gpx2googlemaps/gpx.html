@@ -1,0 +1,82 @@
+{% extends "pylucid/css_anchor_div.html" %}
+
+{% block plugin_content %}
+
+{% extrahead %}
+<script src="http://maps.google.com/maps?file=api&amp;v=2.x&amp;key={{ google_key }}" type="text/javascript"></script>
+<script language="javascript">
+    function plus(element)
+    {
+     element.parentNode.children("plus").className="hidden";
+     element.parentNode.children("small").className="hidden";
+     element.parentNode.children("minus").className="visible";
+     element.parentNode.children("large").className="visible";
+    }
+    function minus(element)
+    {
+     element.parentNode.children("plus").className="visible";
+     element.parentNode.children("small").className="visible";
+     element.parentNode.children("minus").className="hidden";
+     element.parentNode.children("large").className="hidden";
+    }
+    function wheelevent(e)
+    {
+     if (!e) e = window.event;
+     if (e.preventDefault) e.preventDefault();
+     e.returnValue = false;
+    }
+
+function load() {
+if (GBrowserIsCompatible()) {
+  function createMarker(point,markerOptions,Name) {
+    var marker = new GMarker(point, markerOptions);
+    GEvent.addListener(marker, "click", function() {
+      marker.openInfoWindowHtml(Name);
+    });
+    GEvent.addListener(marker,"mouseover", function() {
+      marker.openInfoWindowHtml(Name);
+    });
+    return marker;
+  }
+
+  var map = new GMap2(document.getElementById("map"));
+  //var mgr = new MarkerManager(map);
+map.setCenter(new GLatLng(50.00, 12.00), 13)
+  map.addControl(new GLargeMapControl()); <!-- Adds zoom control -->
+  map.addMapType(G_PHYSICAL_MAP);
+  map.addControl(new GHierarchicalMapTypeControl());  <!-- Adds hybrid/street/satellite -->
+  var gcIcon = new GIcon(G_DEFAULT_ICON);      
+  gcIcon.image = "http://www.wathoserver.de/~gc/geocache-found.png";
+  gcIcon.iconSize = new GSize(24,24);
+  gcIcon.shadow="";
+  gcIcon.iconAnchor = new GPoint(12,12);      
+  gcIcon.infoWindowAnchor = new GPoint(24,0);
+  markerOptions = { icon:gcIcon };
+  var bounds = new GLatLngBounds();
+
+// --------------------------------------
+{% for wpt in waypoints %}
+    var latlng = new GLatLng({{ wpt.lat }}, {{ wpt.lon }});      
+    map.addOverlay(createMarker(latlng, markerOptions, '{{ wpt.name }}<hr/>{{ wpt.desc }}<div><a href="http://www.geocaching.com/seek/cache_details.aspx?wp={{ wpt.name|escape }}" target="_blank">geocaching.com</a></div>'));
+    bounds.extend(latlng)    
+{% endfor %}
+// --------------------------------------
+
+//map.setCenter(bounds.getCenter(), 11, G_HYBRID_MAP);
+  map.setCenter(bounds.getCenter())
+      map.setZoom(map.getBoundsZoomLevel(bounds));
+      map.enableScrollWheelZoom();     
+    }
+}
+// GEvent.addDomListener(map, "DOMMouseScroll", wheelevent);
+// map.onmousewheel = wheelevent;
+
+$(document).ready(function(){
+    load();
+})
+</script>
+{% endextrahead %}
+
+<div id="map" style="width: 100%; height: 500px; position: relative; background-color: rgb(229, 227, 223);"></div>
+<span class='last_update'>Letzte Aktualisierung: {{ last_update }}</span>
+{% endblock %}
