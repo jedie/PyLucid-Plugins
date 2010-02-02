@@ -1,6 +1,8 @@
 # coding: utf-8
 
 import time
+import datetime
+import traceback
 
 try:
     import json # New in Python v2.6
@@ -27,6 +29,15 @@ def _timestamp():
   # Weave rounds to 2 digits and so must we, otherwise rounding errors will
   # influence the "newer" and "older" modifiers
   return round(time.time(), 2)
+
+
+def _datetime2epochtime(dt):
+    assert isinstance(dt, datetime.datetime)
+    timestamp = time.mktime(dt.timetuple()) # datetime -> time since the epoch
+    # Add microseconds. FIXME: Is there a easier way?
+    timestamp += (dt.microsecond / 1000000.0)
+    return round(timestamp, 2)
+
 
 def _debug_request(request):
     print "request.META['CONTENT_LENGTH']: %r" % request.META['CONTENT_LENGTH']
@@ -75,8 +86,16 @@ def json_response(debug=False):
                 ) % (function.__name__, type(data), function.func_code)
                 raise AssertionError(msg)
 
-            data_string = json.dumps(data, sort_keys=True)
-            response = http.HttpResponse(data_string, content_type='application/json')
+            try:
+                data_string = json.dumps(data, sort_keys=True)
+            except Exception, err:
+                print traceback.format_exc()
+                raise
+
+            response = http.HttpResponse(data_string,
+#                content_type='application/json'
+                content_type='text/plain'
+            )
             response["X-Weave-Timestamp"] = _timestamp()
 
             if debug:
@@ -99,6 +118,7 @@ def root_view(request):
     _debug_request(request)
 
     return "weave plugin, use this url: %s" % request.build_absolute_uri()
+
 
 
 @assert_username(debug=True)
@@ -129,8 +149,7 @@ content: '{"meta": "1265104735.79"}'
     timestamps = {}
     for wbo in wbos:
         lastupdatetime = wbo["lastupdatetime"]
-        # FIXME: Milliseconds
-        timestamp = time.mktime(lastupdatetime.timetuple()) # datetime -> time since the epoch
+        timestamp = _datetime2epochtime(lastupdatetime) # datetime -> time since the epoch
         timestamps[wbo["wboid"]] = str(timestamp)
 
     print timestamps
@@ -194,18 +213,21 @@ debug collections:
         wbo.save()
 
         # The server will return the timestamp associated with the modification.
-        data = {wboid: wbo.lastupdatetime}
+        data = {wboid: _datetime2epochtime(wbo.lastupdatetime)}
         return data
     elif request.method == 'GET':
         # Returns a list of the WBO ids contained in a collection.
-        collection = Collection.on_site.get(user=user, name=col_name)
+        try:
+            collection = Collection.on_site.get(user=user, name=col_name)
+        except Collection.DoesNotExist:
+            raise http.Http404
+
         wbos = Wbo.objects.all().filter(collection=collection)
         print "+++", wbos
         timestamps = {}
         for wbo in wbos:
             lastupdatetime = wbo.lastupdatetime
-            # FIXME: Milliseconds
-            timestamp = time.mktime(lastupdatetime.timetuple()) # datetime -> time since the epoch
+            timestamp = _datetime2epochtime(lastupdatetime) # datetime -> time since the epoch
             timestamps[wbo.wboid] = str(timestamp)
 
         print timestamps
