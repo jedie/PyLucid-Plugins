@@ -27,6 +27,9 @@ class Collection(AutoSiteM2M, UpdateInfoBaseModel):
     def __unicode__(self):
         return u"weave collection %r for user %r" % (self.name, self.user.username)
 
+    class Meta:
+        ordering = ("-lastupdatetime",)
+
 
 class Wbo(UpdateInfoBaseModel):
     """
@@ -39,9 +42,13 @@ class Wbo(UpdateInfoBaseModel):
         createby       -> ForeignKey to user who creaded this entry
         lastupdateby   -> ForeignKey to user who has edited this entry
     """
-    collection = models.ForeignKey(Collection)
+    collection = models.ForeignKey(Collection, blank=True, null=True)
+    user = models.ForeignKey(User)
     wboid = models.CharField(max_length=64, blank=True,
         help_text="wbo identifying string"
+    )
+    parentid = models.CharField(max_length=64, blank=True, null=True,
+        help_text="wbo parent identifying string"
     )
     sortindex = models.IntegerField(null=True, blank=True,
         help_text="An integer indicting the relative importance of this item in the collection.",
@@ -57,3 +64,6 @@ class Wbo(UpdateInfoBaseModel):
 
     def __unicode__(self):
         return u"weave wbo %r (%r)" % (self.wboid, self.collection)
+
+    class Meta:
+        ordering = ("-lastupdatetime",)

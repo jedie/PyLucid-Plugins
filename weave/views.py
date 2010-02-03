@@ -14,7 +14,7 @@ try:
 except ImportError:
     from django.utils.functional import wraps  # Python 2.3, 2.4 fallback.
 
-from django import http
+from django.http import HttpResponse
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
@@ -40,11 +40,18 @@ def _datetime2epochtime(dt):
 
 
 def _debug_request(request):
+    MAX = 120
+    def cut(s):
+        s = repr(s)
+        if len(s) > MAX:
+            return s[:MAX] + "..."
+        return s
+
     print "request.META['CONTENT_LENGTH']: %r" % request.META['CONTENT_LENGTH']
     print "request.GET: %r" % request.GET
-    print "request.POST: %r" % request.POST
+    print "request.POST: %s" % cut(request.POST)
     print "request.FILES: %r" % request.FILES
-    print "request.raw_post_data: %r" % request.raw_post_data
+    print "request.raw_post_data: %s" % cut(request.raw_post_data)
 
 
 def assert_username(debug=False):
@@ -80,9 +87,16 @@ def json_response(debug=False):
         def wrapper(request, *args, **kwargs):
             data = function(request, *args, **kwargs)
 
+            if isinstance(data, HttpResponse):
+                if debug:
+                    print "render debug for %r:" % function.__name__
+                    print "data: %r" % data
+                    print "response.content:", data.content
+                return data
+
             if not isinstance(data, dict):
                 msg = (
-                    "renter_to info: %s has not return a dict, has return: %r (%r)"
+                    "json_response info: %s has not return a dict, has return: %r (%r)"
                 ) % (function.__name__, type(data), function.func_code)
                 raise AssertionError(msg)
 
@@ -92,7 +106,7 @@ def json_response(debug=False):
                 print traceback.format_exc()
                 raise
 
-            response = http.HttpResponse(data_string,
+            response = HttpResponse(data_string,
 #                content_type='application/json'
                 content_type='text/plain'
             )
@@ -111,10 +125,16 @@ def json_response(debug=False):
     return renderer
 
 
+class RecordNotFoundResponse(HttpResponse):
+    status_code = 404
+    def __init__(self, content='"record not found"'):
+        HttpResponse.__init__(self)
+        self._container = [content]
+
 
 
 def root_view(request):
-    print "root_view!"
+    print " *** root_view! ***"
     _debug_request(request)
 
     return "weave plugin, use this url: %s" % request.build_absolute_uri()
@@ -128,6 +148,7 @@ def info_collections(request, version, username):
     """
     https://wiki.mozilla.org/Labs/Weave/Sync/1.0/API#GET
     """
+    print "_" * 79
     print "info_collections:"
     _debug_request(request)
 
@@ -156,7 +177,74 @@ content: '{"meta": "1265104735.79"}'
 
     return timestamps
 
+@assert_username(debug=True)
+@check_permissions(superuser_only=False, permissions=(u'weave.add_collection', u'weave.add_wbo'))
+@json_response(debug=True)
+def storage_wboid(request, version, username, wboid):
+    """
+    get items from storage
+    e.g.:
+    GET /1.0/UserName/storage/history?newer=1265189444.85&full=1&sort=index&limit=1500
+    """
+    print "_" * 79
+    print "storage_wboid", wboid
+    _debug_request(request)
 
+    user = request.user
+    if request.method == 'POST':
+        payload = request.raw_post_data
+        if not payload:
+            # If the WBO does not contain a payload, it will only update
+            # the provided metadata fields on an already defined object.
+            raise NotImplemented
+
+        collection, created = Collection.on_site.get_or_create(user=user, name=wboid)
+        if created:
+            print "Collection %r created" % collection
+        else:
+            print "Collection %r exists" % collection
+
+        data = json.loads(payload)
+        if not isinstance(data, list):
+            raise NotImplemented
+
+        for item in data:
+            wbo, created = Wbo.objects.get_or_create(
+                collection=collection,
+                user=user,
+                wboid=item["id"],
+                defaults={
+                    "parentid": item.get("parentid", None), # FIXME: must wboid + parentid be unique?
+                    "sortindex": item.get("sortindex", None),
+                    "payload": item["payload"],
+                }
+            )
+            if created:
+                print "New wbo created: %r" % wbo
+            else:
+                wbo.parentid = item.get("parentid", None)
+                wbo.sortindex = item.get("sortindex", None)
+                wbo.payload = item["payload"]
+                wbo.save()
+                print "Existing wbo updated: %r" % wbo
+
+#        assert val["id"] == wboid, "wrong wbo id: %r != %r" % (val["id"], wboid)
+
+        return {}
+    elif request.method == 'GET':
+        try:
+            wbo = Wbo.objects.filter(user=user).get(wboid=wboid)
+        except Wbo.DoesNotExist:
+            print "Wbo %r not exist for user %r" % (wboid, user)
+            return RecordNotFoundResponse()
+
+        payload = wbo.payload
+        data = json.loads(payload)
+        data["modified"] = _datetime2epochtime(wbo.lastupdatetime)
+        return data
+    else:
+
+        raise NotImplemented
 
 @assert_username(debug=True)
 @check_permissions(superuser_only=False, permissions=(u'weave.add_collection', u'weave.add_wbo'))
@@ -178,6 +266,7 @@ debug collections:
                 'keys': '1265103194.94',
                 'meta': '1265103193.99'}}
     """
+    print "_" * 79
     print "storage", col_name, wboid
     _debug_request(request)
 
@@ -206,6 +295,7 @@ debug collections:
 
         wbo = Wbo(
             collection=collection,
+            user=user,
             wboid=wboid,
             sortindex=sortindex,
             payload=payload
@@ -220,19 +310,37 @@ debug collections:
         try:
             collection = Collection.on_site.get(user=user, name=col_name)
         except Collection.DoesNotExist:
-            raise http.Http404
+            print "Collection %r for user %r not found" % (col_name, user)
+            return RecordNotFoundResponse()
 
-        wbos = Wbo.objects.all().filter(collection=collection)
-        print "+++", wbos
-        timestamps = {}
-        for wbo in wbos:
-            lastupdatetime = wbo.lastupdatetime
-            timestamp = _datetime2epochtime(lastupdatetime) # datetime -> time since the epoch
-            timestamps[wbo.wboid] = str(timestamp)
+        try:
+            wbo = Wbo.objects.all().filter(collection=collection).get(wboid=wboid)
+        except Wbo.DoesNotExist:
+            print "Wbo %r not exist for collection %r" % (wboid, collection)
+            return RecordNotFoundResponse()
 
-        print timestamps
+        payload = wbo.payload
+        data = json.loads(payload)
+        data["modified"] = _datetime2epochtime(wbo.lastupdatetime)
+        return data
+#        print "+++", wbos
+#        timestamps = {}
+#        for wbo in wbos:
+#            lastupdatetime = wbo.lastupdatetime
+#            timestamp = _datetime2epochtime(lastupdatetime) # datetime -> time since the epoch
+#            timestamps[wbo.wboid] = str(timestamp)
 
-        return timestamps
+#        val = json.loads(raw_post_data)
+#        print "val1: %r" % val
+#        val['modified'] = _timestamp()
+#        print "val2: %r" % val
+#        val = json.dumps(val, sort_keys=True)
+
+#        if not timestamps:
+#            print "wboid %r not found for collection %r" % (wboid, collection)
+#            return RecordNotFoundResponse()
+#
+#        return timestamps
     else:
         raise NotImplemented
 
@@ -248,42 +356,64 @@ debug collections:
 # 'timestamps': {'meta': '1265104735.79'}}
 
 
-    try:
-        collection = Collection.on_site.get(user=request.user, name=col_name)
-    except Collection.DoesNotExist:
-        raise http.Http404("collection not found.")
+#    try:
+#        collection = Collection.on_site.get(user=user, name=col_name)
+#    except Collection.DoesNotExist:
+#        print "Collection %r for user %r not found" % (col_name, user)
+#        return RecordNotFoundResponse()
+#
+#
+#    raw_post_data = request.raw_post_data
+#    if raw_post_data:
+#        print "raw_post_data: %r" % raw_post_data
+
+#
+##        self.collections.setdefault(col, {})[key] = val
+##        self.ts_col(col)
+#
+#
+#    response = HttpResponse("{}", content_type='application/json')
+#    response["X-Weave-Timestamp"] = _timestamp()
+#    return response
 
 
-    raw_post_data = request.raw_post_data
-    if raw_post_data:
-        print "raw_post_data: %r" % raw_post_data
-        val = json.loads(raw_post_data)
-        print "val1: %r" % val
-        val['modified'] = _timestamp()
-        print "val2: %r" % val
-        val = json.dumps(val, sort_keys=True)
-
-#        self.collections.setdefault(col, {})[key] = val
-#        self.ts_col(col)
-
-
-    response = http.HttpResponse("{}", content_type='application/json')
-    response["X-Weave-Timestamp"] = _timestamp()
-    return response
-
-
+@assert_username(debug=True)
 def sign_in(request, version, username):
+    """
+    finding cluster for user -> return 404 -> Using serverURL as data cluster (multi-cluster support disabled)
+    """
+    print "_" * 79
     print "sign_in %r" % username
     print "request.user: %r" % request.user
     _debug_request(request)
-    raise http.Http404
+
+#    absolute_uri = request.build_absolute_uri()
+
+#    response = HttpResponse("",
+##                content_type='application/json'
+#        content_type='text/plain'
+#    )
+#    response["X-Weave-Timestamp"] = _timestamp()
+#
+#    return response
+
+    return RecordNotFoundResponse(content="404 Not Found")
+#
+#    response = HttpResponse("", content_type='text/html')
+#    response["X-Weave-Timestamp"] = _timestamp()
+#    return response
 
 
+@assert_username(debug=True)
+@json_response(debug=True)
 def exist_user(request, version, username):
     """
     https://wiki.mozilla.org/Labs/Weave/User/1.0/API
-    Returns 1 if the username is in use, 0 if it is available. 
+    Returns 1 if the username is in use, 0 if it is available.
+    
+    e.g.: https://auth.services.mozilla.com/user/1/UserName
     """
+    print "_" * 79
     print "exist_user:"
     _debug_request(request)
 
@@ -293,22 +423,25 @@ def exist_user(request, version, username):
     else:
         response_content = "0"
 
-    response = http.HttpResponse(response_content, content_type='application/json')
+    response = HttpResponse(response_content, content_type='text/html')
     response["X-Weave-Timestamp"] = _timestamp()
     return response
 
+
 def captcha_html(request, version):
+    print "_" * 79
     print "captcha_html:"
     _debug_request(request)
 
-#    raise http.Http404
-    #response = http.HttpResponse("11", status=400, content_type='application/json')
-    response = http.HttpResponse("not supported")
+#    raise Http404
+    #response = HttpResponse("11", status=400, content_type='application/json')
+    response = HttpResponse("not supported")
     response["X-Weave-Timestamp"] = _timestamp()
     return response
 
 
 def setup_user(request, version, username):
+    print "_" * 79
     print "setup_user", version, username
     _debug_request(request)
 

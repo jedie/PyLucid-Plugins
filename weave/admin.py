@@ -28,13 +28,21 @@ from pylucid_project.apps.pylucid_admin.admin_site import pylucid_admin_site
 from pylucid_project.pylucid_plugins.weave.models import Wbo, Collection
 
 
+
 class WboAdmin(VersionAdmin):
-    """
-    """
-#    list_display = ("id", "headline", "is_public", "view_on_site_link", "site_info", "lastupdatetime", "lastupdateby")
-#    list_display_links = ("headline",)
-#    list_filter = ("is_public", "sites", "createby", "lastupdateby",)
-#    date_hierarchy = 'lastupdatetime'
+    def payload_cutout(self, obj):
+        MAX = 100
+        payload = obj.payload
+        if len(payload) > MAX:
+            payload = payload[:MAX] + "..."
+        return payload
+    payload_cutout.short_description = "Payload cutout"
+#    view_on_site_link.allow_tags = True
+
+    list_display = ("id", "lastupdatetime", "user", "wboid", "parentid", "sortindex", "lastupdateby", "payload_cutout")
+    list_display_links = ("wboid",)
+    list_filter = ("user", "collection")
+    date_hierarchy = 'lastupdatetime'
 #    search_fields = ("headline", "content")
 
 pylucid_admin_site.register(Wbo, WboAdmin)
@@ -43,10 +51,10 @@ pylucid_admin_site.register(Wbo, WboAdmin)
 class CollectionAdmin(VersionAdmin):
     """
     """
-#    list_display = ("id", "headline", "is_public", "view_on_site_link", "site_info", "lastupdatetime", "lastupdateby")
-#    list_display_links = ("headline",)
-#    list_filter = ("is_public", "sites", "createby", "lastupdateby",)
-#    date_hierarchy = 'lastupdatetime'
+    list_display = ("id", "lastupdatetime", "user", "name", "lastupdateby")
+    list_display_links = ("name",)
+    list_filter = ("user", "createby", "lastupdateby",)
+    date_hierarchy = 'lastupdatetime'
 #    search_fields = ("headline", "content")
 
 pylucid_admin_site.register(Collection, CollectionAdmin)

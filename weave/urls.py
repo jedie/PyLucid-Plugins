@@ -19,8 +19,8 @@ urlpatterns = patterns('',
     #/1.0/user2/storage/tabs
 
 
-    #/1.0/test1/storage/keys/pubkey
     url(r'^/(?P<version>.*?)/(?P<username>.*?)/storage/(?P<col_name>.*?)/(?P<wboid>.*?)$', views.storage),
+    url(r'^/(?P<version>.*?)/(?P<username>.*?)/storage/(?P<wboid>.*?)$', views.storage_wboid),
 
     #/1.0/UserName/info/collections
     url(r'^/(?P<version>.*?)/(?P<username>.*?)/info/collections$',
