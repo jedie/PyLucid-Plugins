@@ -1,23 +1,39 @@
+{% extends template_name %}
+
+{% block content %}
+
+{% extrahead %}
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+	$("#id_block").change(function() {
+        log("block select field changed:" + this.value);
+	    slug = this.value;
+	    
+	    $("#page_content").slideUp();
+	    txt = $('#id_block :selected').text();
+        $("#page_content").html('<h2 class="noanchor">load "'+ txt +'"...</h2>');
+        $("#page_content").slideDown();
+	    
+	    href = "../" + slug + "/";
+	    log("new href:" + href);        
+	    window.location.href = href;
+    });
+});
+</script>
+{% endextrahead %}
+
 <fieldset><legend>Select a unicode block:</legend>
     <label for="block">select a unicode block:</label>
-    <form name="block_select" method="post" action="{{ block_select_url }}">
-        <select name="block">
-            {% for block in block_select_data %}
-            <option value="{{ block.id }}" {% ifequal block.id selected_id %}selected="selected"{% endifequal %}>
-                {{ block.id }} - {{ block.name }}
-            </option>
-            {% endfor %}
-        </select>
-        <input value="display" type="submit">
+    <form name="block_select" method="get" action="{% url DecodeUnicode-index %}">
+    	{{ form }}
+        <input value="{% trans "display" %}" type="submit">
     </form>
 </fieldset>
 
 <fieldset><legend>{{ range_hex1 }}-{{ range_hex2 }} - {{ block_name }}:</legend>
-<p>
-    <a href="{{ back_url }}">&lt;&lt; {{ back_name }}</a>
-    - {{ block_name }} -
-    <a href="{{ next_url }}">{{ next_name }} &gt;&gt;</a>
-</p>
+
+{% include "DecodeUnicode/includes/links.html" %}
+
 <table style="width: 100%">
     <tr>
         <th>no</th>
@@ -28,7 +44,7 @@
         <th>html</th>
         <th>unicode name</th>
     </tr>
-    {% for row in block_data %}
+    {% for row in char_list %}
     <tr class="{% cycle 'odd' 'even' %}">
         <td><small>{{ row.id }}</small></td>
         <td style="text-align:center;"><strong>{{ row.char }}</strong></td>
@@ -49,13 +65,9 @@
     {% endfor %}
 </table>
 
-<p>
-    <a href="{{ back_url }}">&lt;&lt; {{ back_name }}</a>
-    - {{ block_name }} -
-    <a href="{{ next_url }}">{{ next_name }} &gt;&gt;</a>
-</p>
+{% include "DecodeUnicode/includes/links.html" %}
 
-<ul>&#x22D8; Column usage info: &#x22D9;
+<ul><h3>&#x22D9; Column usage info: &#x22D8;</h3>
   <li><strong>unicode</strong>: Python example &#x2192; <strong>print u'\u0041'</strong></li>
   <li><strong>hex</strong>: Python example &#x2192; <strong>print '\x41'</strong></li>
   <li><strong>html</strong>: copy&paste into your html code ;)</li>
@@ -64,3 +76,4 @@
   <small>Used Unicode database v{{ unidata_version }}</small>
 </p>
 </fieldset>
+{% endblock content %}
