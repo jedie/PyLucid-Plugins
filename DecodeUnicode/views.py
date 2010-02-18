@@ -18,6 +18,7 @@ __version__ = "$Rev:$"
 
 import unicodedata
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 
