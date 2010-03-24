@@ -12,5 +12,8 @@ urlpatterns = patterns('',
 #    url(r'^/feed/(?P<filename>.+?)$', feed, name='Blog-feed'),
 
     url(r'^/verify_email/(?P<hash>.+?)/$', views.verify_email, name='KursAnmeldung-verify_email'),
+
+    url(r'^/done/$', views.register_done, name='KursAnmeldung-register_done'),
+
     url(r'^', views.register, name='KursAnmeldung-register'),
 )

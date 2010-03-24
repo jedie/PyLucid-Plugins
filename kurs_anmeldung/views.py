@@ -27,27 +27,49 @@ from django.core.mail import SMTPConnection, EmailMessage
 from django.template.loader import render_to_string
 
 from pylucid_project.utils import crypt
+from pylucid_project.apps.pylucid.models import LogEntry
 from pylucid_project.apps.pylucid.decorators import render_to
 
-from external_plugins.kurs_anmeldung.models import KursAnmeldung
-from external_plugins.kurs_anmeldung.preference_forms import KursAnmeldungPrefForm
-from external_plugins.kurs_anmeldung.forms import KursAnmeldungForm
+from kurs_anmeldung.models import KursAnmeldung
+from kurs_anmeldung.preference_forms import KursAnmeldungPrefForm
+from kurs_anmeldung.forms import KursAnmeldungForm
 
 
 # Don't send mails, display them only.
-MAIL_DEBUG = True
-#MAIL_DEBUG = False
+#MAIL_DEBUG = True
+MAIL_DEBUG = False
+
+
+def _get_context_pref():
+    pref_form = KursAnmeldungPrefForm()
+    preferences = pref_form.get_preferences()
+    context = {"title": preferences["title"]}
+    return context, preferences
+
 
 @render_to("kurs_anmeldung/verified.html")
 def verify_email(request, hash):
     """ check a email hash """
+    context, preferences = _get_context_pref()
+
+    if not crypt.validate_sha_value(hash):
+        LogEntry.objects.log_action(app_label="kurs_anmeldung", action="error",
+            message="Wrong hash value %r" % hash
+        )
+        context["error"] = u"Hash wert im Link ist ungültig!"
+        return context
+
     try:
         entry = KursAnmeldung.objects.get(verify_hash=hash)
     except Exception, err:
+        msg = "Link ist ungültig!"
+        LogEntry.objects.log_action(app_label="kurs_anmeldung", action="error",
+            message="Can't get KursAnmeldung entry from hash value: %r" % hash
+        )
         if settings.DEBUG:
-            raise
-        request.page_msg.red("URL error!")
-        return
+            msg += " (Original error was: %s)" % err
+        context["error"] = msg
+        return context
 
     if entry.verified == True:
         request.page_msg(u"Hinweis: Deine Anmeldung wurde bereits bestätigt.")
@@ -56,7 +78,7 @@ def verify_email(request, hash):
     entry.log(request, "verified via email hash link")
     entry.save()
 
-    context = {"entry": entry}
+    context["entry"] = entry
     return context
 
 
@@ -114,7 +136,11 @@ def _send_verify_email(request, preferences, db_entry, rnd_hash, new_entry):
     try:
         sended = email.send(fail_silently=False)
     except Exception, err:
-        db_entry.log(request, "Error sending mail: %s" % err)
+        msg = "Error sending mail: %s" % err
+        LogEntry.objects.log_action(app_label="kurs_anmeldung", action="error",
+            message=msg
+        )
+        db_entry.log(request, msg)
         db_entry.mail_sended = False
         if settings.DEBUG or request.user.is_staff:
             db_entry.save()
@@ -124,13 +150,18 @@ def _send_verify_email(request, preferences, db_entry, rnd_hash, new_entry):
         db_entry.log(request, "mail sended: %s" % sended)
 
 
-@render_to()
+@render_to("kurs_anmeldung/register_done.html")
+def register_done(request):
+    context, preferences = _get_context_pref()
+    return context
+
+
+@render_to("kurs_anmeldung/register.html")
 def register(request):
     """
     Display the register form.
     """
-    pref_form = KursAnmeldungPrefForm()
-    preferences = pref_form.get_preferences()
+    context, preferences = _get_context_pref()
 
     if request.method == 'POST':
         form = KursAnmeldungForm(request.POST)
@@ -155,19 +186,12 @@ def register(request):
             # Save new log entries
             new_entry.save()
 
-            context = {
-                "template_name": "kurs_anmeldung/anmeldung_erfolgt.html",
-                "title": preferences["title"],
-            }
-            return context
+            new_location = reverse("KursAnmeldung-register_done")
+            return HttpResponseRedirect(new_location)
     else:
         form = KursAnmeldungForm()
 
-    context = {
-        "template_name": "kurs_anmeldung/anmeldung.html",
-        "title": preferences["title"],
-        "form": form,
-    }
+    context["form"] = form
     return context
 
 

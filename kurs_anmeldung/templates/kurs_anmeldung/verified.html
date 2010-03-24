@@ -1,7 +1,12 @@
 {% extends "kurs_anmeldung/template_base.html" %}
 
 {% block content %}
+{% if error %}
+<h2>Fehler!</h2>
+<p>{{ error }}</p>
+{% else %}
 <h2>bestätigt</h2>
 <p>Hi {{ entry.vorname }}...</p>
 <p>Deine Anmeldung ist nun bestätigt.</p>
+{% endif %}
 {% endblock content %}
