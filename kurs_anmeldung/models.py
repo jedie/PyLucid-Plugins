@@ -60,6 +60,7 @@ class KursAnmeldung(UpdateInfoBaseModel):
         ("SS08", "SS 2008"),
         ("WS08/09", "WS 2008/2009"),
         ("SS09", "SS 2009"),
+        ("WS09/10", "WS 2009/2010"),
         (
             "unbekannt",
             "Hatte mich schon einmal eingetragen, weiß aber nicht mehr wann."
