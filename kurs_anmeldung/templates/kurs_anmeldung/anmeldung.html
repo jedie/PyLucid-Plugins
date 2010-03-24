@@ -1,0 +1,11 @@
+{% extends "kurs_anmeldung/template_base.html" %}
+
+{% block content %}
+<form action="{{ url }}" method="post" id="edit_page_form" class="pylucid_form">
+	{% include "admin/pylucid/includes/form_errorlist.html" %}
+	{% include "admin/pylucid/includes/pylucid_formset.html" %}
+	<div class="helper_buttons">
+	    <input type="submit" name="save" value="anmelden" />
+	</div>
+</form>
+{% endblock content %}

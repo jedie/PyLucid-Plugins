@@ -5,7 +5,7 @@ Du hast dich für folgenden Kurs angemeldet:
     * {{ kurs.name }}
     {% endfor %}	
 
-Bestätige die richtigkeit deiner EMail Adresse mit diesem Link:
+Bestätige die Richtigkeit deiner EMail Adresse mit diesem Link:
 
 {{ verify_link }}
 
@@ -13,5 +13,5 @@ Ob du in den Kurs in diesem Semester teilnehmen kannst entscheidet ein
 Losverfahren. Du erhälst eine Mail darüber in den nächsten Tagen.
 
 --
-Reg.from {{ db_entry.ip_address }} - {{ now }}
+Reg.from {{ db_entry.ip_address }} - {{ now }} (UTC)
 This mail was automatic created by PyLucid CMS - http://www.pylucid.org
