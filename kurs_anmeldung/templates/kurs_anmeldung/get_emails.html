@@ -1,0 +1,8 @@
+{% extends "kurs_anmeldung/template_base.html" %}
+
+{% block content %}
+<textarea cols=50 rows=20>
+{% for email in emails %}
+{{ email }}{% endfor %}
+</textarea>
+{% endblock content %}
