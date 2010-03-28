@@ -1,0 +1,13 @@
+{% extends "kurs_anmeldung/template_base.html" %}
+
+{% block content %}
+{% for kurs in kurse %}
+    <h2>{{ kurs.name }}</h2>
+
+<textarea cols=50 rows=20>Name;email;semester;laptop;warteliste;
+{% for anmeldung in kurs.kurs_wahl.all %}{{ anmeldung.vorname }} {{ anmeldung.nachname }};{{ anmeldung.email }};{{ anmeldung.semester }};{{ anmeldung.laptop|yesno }};{{ anmeldung.warteliste }};
+{% endfor %}
+</textarea>
+
+{% endfor %}
+{% endblock content %}

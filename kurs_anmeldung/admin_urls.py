@@ -20,7 +20,7 @@ from django.conf.urls.defaults import patterns, url
 from kurs_anmeldung import admin_views
 
 urlpatterns = patterns('',
-#    url(r'^get_csv/$', admin_views.get_csv, name='KursAnmeldung-get_csv'),
+    url(r'^csv_export/$', admin_views.csv_export, name='KursAnmeldung-csv_export'),
     url(r'^get_emails/$', admin_views.get_emails, name='KursAnmeldung-get_emails'),
 )
 

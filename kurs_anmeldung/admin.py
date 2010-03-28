@@ -25,10 +25,10 @@ pylucid_admin_site.register(Kurs, KursAdmin)
 class KursAnmeldungAdmin(VersionAdmin):
     list_display = (
         "id",
-#        "vorname", "nachname",
-        "email", "verified", "kurs_wahl",
+        "vorname", "nachname", "kurs_wahl", "laptop", "warteliste",
+        "email", "verified",
         "note", "log_html",
-#        "laptop", "warteliste",
+#        
 #        "createby", "lastupdateby",
     )
     list_display_links = ("id", "email",)

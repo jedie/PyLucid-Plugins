@@ -12,7 +12,7 @@ from pylucid_project.apps.pylucid.markup.converter import apply_markup
 
 from pylucid_project.apps.pylucid_admin.admin_menu import AdminMenu
 
-from kurs_anmeldung.models import KursAnmeldung
+from kurs_anmeldung.models import Kurs, KursAnmeldung
 
 def install(request):
     """ insert PyLucid admin views into PageTree """
@@ -24,6 +24,11 @@ def install(request):
     admin_menu.add_menu_entry(
         parent=menu_section_entry, url_name="KursAnmeldung-get_emails",
         name="get all emails", title="Get a list of all email addresses",
+    )
+
+    admin_menu.add_menu_entry(
+        parent=menu_section_entry, url_name="KursAnmeldung-csv_export",
+        name="csv export", title="csv export",
     )
 
     return "\n".join(output)
@@ -51,3 +56,21 @@ def get_emails(request):
     }
     return context
 
+@check_permissions(superuser_only=False, permissions=ALL_PERMISSIONS)
+@render_to("kurs_anmeldung/csv_export.html")
+def csv_export(request):
+#    data = []
+    kurse = Kurs.on_site.filter(active=True)
+#    for kurs in kurse:
+#        anmeldungen = kurs.kurs_wahl.all()
+#        data.append({
+#            "kurs": kurs,
+#            "anmeldungen": anmeldungen,
+#        })
+
+    context = {
+        "title": _("CSV export"),
+#        "data": data,
+        "kurse": kurse,
+    }
+    return context
