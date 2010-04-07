@@ -8,6 +8,8 @@ from django.utils.translation import ugettext as _
 
 from dbpreferences.forms import DBPreferencesBaseForm
 
+from pylucid_project.apps.pylucid.shortcuts import failsafe_message
+
 
 try:
     forms.EmailField().clean(settings.DEFAULT_FROM_EMAIL)
@@ -16,7 +18,7 @@ except forms.ValidationError, err:
         "Please change 'DEFAULT_FROM_EMAIL' in your settings.py,"
         " current value is: %s (Org.Error: %s)"
     ) % (settings.DEFAULT_FROM_EMAIL, err)
-    raise AssertionError(msg)
+    failsafe_message(msg)
 
 
 class KursAnmeldungPrefForm(DBPreferencesBaseForm):
