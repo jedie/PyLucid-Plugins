@@ -5,8 +5,6 @@ from django.conf import settings
 
 from reversion.admin import VersionAdmin
 
-from pylucid_project.apps.pylucid_admin.admin_site import pylucid_admin_site
-
 from external_plugins.kurs_anmeldung.models import Kurs, KursAnmeldung
 
 
@@ -18,7 +16,7 @@ class KursAdmin(VersionAdmin):
     search_fields = ("name",)
     ordering = ('-lastupdatetime',)
 
-pylucid_admin_site.register(Kurs, KursAdmin)
+admin.site.register(Kurs, KursAdmin)
 
 
 
@@ -37,4 +35,4 @@ class KursAnmeldungAdmin(VersionAdmin):
     search_fields = ("vorname", "nachname", "email", "note", "logging")
     ordering = ('-lastupdatetime',)
 
-pylucid_admin_site.register(KursAnmeldung, KursAnmeldungAdmin)
+admin.site.register(KursAnmeldung, KursAnmeldungAdmin)
