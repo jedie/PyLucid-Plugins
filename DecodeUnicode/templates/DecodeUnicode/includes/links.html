@@ -1,9 +1,0 @@
-<p>
-	{% if prior_block %}
-		<a href="../{{ prior_block.slug }}/">&lt;&lt; {{ prior_block.name }}</a> -
-	{% endif %}
-    {{ block_name }}
-    {% if next_block %}
-    	- <a href="../{{ next_block.slug }}/">{{ next_block.name }} &gt;&gt;</a>
-    {% endif %}
-</p>
